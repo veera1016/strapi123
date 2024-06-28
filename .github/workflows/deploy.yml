@@ -25,16 +25,17 @@ jobs:
       run: yarn build
 
     - name: Deploy to EC2
-      env:
-        EC2_USER: ubuntu  # Change this if you are using a different user
-        EC2_HOST: ${{ secrets.EC2_HOST }}
-        EC2_KEY: ${{ secrets.EC2_KEY }}
-      run: |
-        echo "${EC2_KEY}" > /tmp/ec2_key.pem
-        chmod 600 /tmp/ec2_key.pem
-        scp -i /tmp/ec2_key.pem -r ./* $EC2_USER@$EC2_HOST:/var/www/strapi
-        ssh -i /tmp/ec2_key.pem $EC2_USER@$EC2_HOST << 'EOF'
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_KEY }}
+        script: |
+          echo "${EC2_KEY}" > /tmp/ec2_key.pem
+          chmod 600 /tmp/ec2_key.pem
+          scp -i /tmp/ec2_key.pem -r ./* $EC2_USERNAME@$EC2_HOST:/var/www/strapi
+          ssh -i /tmp/ec2_key.pem $EC2_USERNAME@$EC2_HOST << 'EOF'
           cd /var/www/strapi
           yarn install --production
           pm2 restart all || pm2 start yarn --name "strapi" -- start
-        EOF
+    
